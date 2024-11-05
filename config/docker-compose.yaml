@@ -25,7 +25,29 @@ services:
       - "9093:9093"
     networks:
       - kafka-network
+  minio:
+    image: bitnami/minio:latest
+    container_name: minio
+    user: root
+    volumes:
+      - minio-data:/data
+    ports:
+      - 9000:9000
+      - 9001:9001
+    environment:
+      MINIO_ROOT_USER: 'minio'
+      MINIO_ROOT_PASSWORD: 'minio_pass'
+      MINIO_ADDRESS: ':9000'
+      MINIO_CONSOLE_ADDRESS: ':9001'
+    entrypoint: sh -c "minio server /data"
+    networks:
+      - kafka-network
+    
 
 networks:
   kafka-network:
-    external: true  # Use the existing external network
+    external: true 
+     # Use the existing external network
+volumes:
+  minio-data: 
+    external: true
