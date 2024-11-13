@@ -20,6 +20,9 @@ services:
       - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9093
     depends_on:
       - zookeeper
+    user: root
+    volumes:
+      - kafka-data:/bitnami/kafka
     ports:
       - "9092:9092"
       - "9093:9093"
@@ -42,12 +45,40 @@ services:
     entrypoint: sh -c "minio server /data"
     networks:
       - kafka-network
+  mongodb:
+    image: mongo
+    container_name: mongo
+    restart: always
+    networks:
+      - kafka-network
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo-db:/data/db    
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    ports:
+      - 8082:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: root
+      ME_CONFIG_MONGODB_URL: mongodb://root:root@mongo:27017/
+    networks:
+      - kafka-network
+    volumes:
+      - mongo-db:/data/db
+
     
 
 networks:
   kafka-network:
     external: true 
-     # Use the existing external network
+
 volumes:
   minio-data: 
     external: true
+  kafka-data:
+    external: true
+  mongo-db:
