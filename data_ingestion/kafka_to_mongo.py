@@ -81,12 +81,13 @@ def consume_and_store(topic_name, collection_name):
 
 # Sequentially process each topic
 if __name__ == '__main__':
-    """for topic in TOPICS:
+    
+    
+    try:
+        for topic in TOPICS:
         collection_name = topic  # Use topic name as the collection name
         consume_and_store(topic, collection_name)
-    logging.info("All news topics have been processed and consumers stopped.")
-    """
-    try:
+        logging.info("All news topics have been processed and consumers stopped.")
         consume_and_store("market_screen", "market_screen")
         logging.info("listenning to financial data topic.")
     except Exception as e:
