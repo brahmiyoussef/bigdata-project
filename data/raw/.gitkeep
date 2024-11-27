@@ -1,0 +1,8 @@
+from pyspark.sql.functions import concat_ws, col
+
+
+def concatenate_headline_and_summary(df):
+    # Create a new column 'headline_summary' that concatenates 'headline' and 'summary'
+    df_with_concat = df.withColumn("headline_summary", concat_ws(" ", col("headline"), col("summary")))
+    
+    return df_with_concat

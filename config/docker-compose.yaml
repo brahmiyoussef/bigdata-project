@@ -6,7 +6,7 @@ services:
     container_name: zookeeper
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
-    networks:
+    networks: 
       - kafka-network
 
   kafka:
