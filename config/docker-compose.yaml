@@ -6,7 +6,7 @@ services:
     container_name: zookeeper
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
-    networks: 
+    networks:
       - kafka-network
 
   kafka:
@@ -78,5 +78,4 @@ volumes:
   minio-data: 
     external: true
   kafka-data:
-      external: true
   mongo-db:
