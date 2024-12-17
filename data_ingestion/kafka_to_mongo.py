@@ -8,16 +8,7 @@ import signal
 
 # Kafka and MongoDB setup
 KAFKA_SERVER = 'localhost:9092'
-TOPICS = [
-    "topic_AAPL",
-    "topic_AMZN",
-    "topic_GOOG",
-    "topic_META",
-    "topic_MSFT",
-    "topic_NVDA",
-    "topic_TSLA"
-]
-MONGO_URI = 'mongodb://localhost:27017/'
+uri = "mongodb://localhost:27017"
 DATABASE_NAME = 'market_screener'
 running = True
 
@@ -29,68 +20,79 @@ def signal_handler(sig, frame):
 # Register signal handler
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
-
+topics=['news','market_screen']
 # Logging setup
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Function to consume messages from a Kafka topic and insert them into a MongoDB collection
-def consume_and_store(topic_name, collection_name):
-    # Initialize Kafka consumer
+def consume_and_store(source, timeout=5):
+    """
+    Consume messages from a Kafka topic and insert them into a MongoDB collection.
+    Stops if no message is processed within the timeout period.
+    """
     global running
 
+    # Kafka Consumer configuration
     consumer_conf = {
         'bootstrap.servers': KAFKA_SERVER,
-        'group.id': f'group_{topic_name}',
+        'group.id': f'group_{source}',
         'auto.offset.reset': 'earliest'
     }
     consumer = Consumer(consumer_conf)
-    consumer.subscribe([topic_name])
+    consumer.subscribe([source])
 
-    # Initialize MongoDB client
-    mongo_client = MongoClient(MONGO_URI)
+    # MongoDB connection
+    mongo_client = MongoClient(uri)
     db = mongo_client[DATABASE_NAME]
-    collection = db[collection_name]
+    collection = db[source]
 
-    logging.info(f"Starting consumption for topic '{topic_name}' and storing in collection '{collection_name}'...")
+    logging.info(f"Starting consumption for topic '{source}' and storing in collection '{source}'...")
+    
+    last_processed_time = time.time()  # Record the last message processed time
 
-    # Read messages from Kafka and insert into MongoDB
     try:
-        while True:
-            message = consumer.poll(1.0)  # Poll for messages
+        while running:
+            message = consumer.poll(1.0)  # Poll for messages (1-second timeout per poll)
+            
             if message is None:
-                if not running:
+                # Check timeout
+                if time.time() - last_processed_time > timeout:
+                    logging.info(f"No messages processed in {timeout} seconds for topic '{source}'. Stopping consumer.")
                     break
                 continue
+            
             if message.error():
-                logging.error(f"Consumer error in {topic_name}: {message.error()}")
+                logging.error(f"Consumer error in topic '{source}': {message.error()}")
                 continue
 
-            # Insert message into MongoDB
+            # Process the message
             try:
                 record = json.loads(message.value().decode('utf-8'))
                 collection.insert_one(record)
-                logging.info(f"Inserted message from topic '{topic_name}' into MongoDB collection '{collection_name}'.")
+                last_processed_time = time.time()  # Reset timeout timer on successful message processing
+                logging.info(f"Inserted message from topic '{source}' into MongoDB collection '{source}'.")
             except json.JSONDecodeError:
-                logging.error(f"Failed to decode JSON from message in topic '{topic_name}'.")
+                logging.error(f"Failed to decode JSON from message in topic '{source}'.")
             except errors.PyMongoError as e:
-                logging.error(f"MongoDB insertion error for topic '{topic_name}': {e}")
+                logging.error(f"MongoDB insertion error for topic '{source}': {e}")
+
     finally:
         consumer.close()
         mongo_client.close()
-        logging.info(f"Stopped consumer for topic '{topic_name}'.")
+        logging.info(f"Stopped consumer for topic '{source}'.")
 
-# Sequentially process each topic
+# Main function
 if __name__ == '__main__':
-    
-    
     try:
-        for topic in TOPICS:
-        collection_name = topic  # Use topic name as the collection name
-        consume_and_store(topic, collection_name)
-        logging.info("All news topics have been processed and consumers stopped.")
-        consume_and_store("market_screen", "market_screen")
-        logging.info("listenning to financial data topic.")
+        # Define topics and their corresponding collections
+
+        for source in topics:
+            logging.info(f"Starting to monitor topic '{source}'...")
+            consume_and_store(source, timeout=5)  # Call with 5-second timeout
+            logging.info(f"Finished monitoring topic '{source}'. Moving to the next topic.")
+
+        logging.info("Finished processing all specified topics.")
+
     except Exception as e:
-        logging.error(f"Error in continuous listener: {e}")
-        time.sleep(1)   
-    
+        logging.error(f"Error in main execution: {e}")
+        time.sleep(1)

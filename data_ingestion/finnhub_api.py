@@ -22,15 +22,7 @@ producer = Producer(producer_conf)
 
 # Define the symbols and corresponding Kafka topics
 symbols = ["AAPL", "TSLA", "MSFT", "AMZN", "GOOG", "META", "NVDA"]
-topics = [
-    "topic_AAPL",
-    "topic_TSLA",
-    "topic_MSFT",
-    "topic_AMZN",
-    "topic_GOOG",
-    "topic_META",
-    "topic_NVDA"
-]
+topic = "news"
 
 # Get the date range for yesterday
 today = datetime.now()
@@ -39,7 +31,7 @@ _from = yesterday.strftime('%Y-%m-%d')
 _to = today.strftime('%Y-%m-%d')
 
 # Loop through each symbol and topic
-for symbol, topic in zip(symbols, topics):
+for symbol in symbols:
     # Request company news for the previous day
     news = finnhub_client.company_news(symbol, _from=_from, to=_to)
 
