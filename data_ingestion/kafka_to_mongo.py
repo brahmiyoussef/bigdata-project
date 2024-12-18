@@ -3,12 +3,15 @@ from pymongo import MongoClient, errors
 import json
 import time
 import logging
+import os
 import signal
+import dotenv
+load_dotenv()
+uri=os.getenv('mongo_uri')
 
 
 # Kafka and MongoDB setup
 KAFKA_SERVER = 'localhost:9092'
-uri = "mongodb://localhost:27017"
 DATABASE_NAME = 'market_screener'
 running = True
 

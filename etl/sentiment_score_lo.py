@@ -3,6 +3,8 @@ from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.functions import unix_timestamp, current_timestamp
 import pandas as pd
 from pymongo import MongoClient
+import dotenv
+load_dotenv()
 
 
 
@@ -10,7 +12,9 @@ from pymongo import MongoClient
 
 
 def load_to_mongodb(df, collection):
-    mongo_uri = f"mongodb://localhost:27017/market_screener.{collection}"
+    uri=os.getenv('mongo_uri')
+
+    mongo_uri = f"{uri}/market_screener.{collection}"
     df.write.format("mongo").option("uri", mongo_uri).mode("append").save()
 
 
@@ -25,7 +29,7 @@ def df_to_pandas(spark_df):
 
 def pd_to_collection(df):
     try:
-        uri="mongodb://localhost:27017"
+        uri=os.getenv('mongo_uri')
         db_name="market_screener"
         # Convert DataFrame to list of dictionaries and insert into MongoDB
         client = MongoClient(uri)
